@@ -39,7 +39,9 @@ background-color:#FFFFFF;
 </head>
 <body style="overflow: hidden">
 <div id="menu" class="menu" >
-	<input type="file" multiple="" id="inputField" onchange="handleFiles({fileList : this.files, index : 0})" onclick="this.value=''" value="/home/lean/Image1.jpg"/>
+	<input type="file" multiple="" id="inputField" onchange="handleFiles({fileList : this.files, index : 0})" onclick="this.value=''" value="/home/lean/Image1.jpg"/><br/>
+Size(percent)<input type="text" id="sizeText" value="33" size="3"/> 
+Speed(Pixels per second)<input type="text" id="speedText" value="33" size="4"/> 
 	<button onclick="startAnimation()" id="runButton">run</button>
 	</div>
 
@@ -139,7 +141,7 @@ var lastPos = 0;
 var spacing = 10;
 var spacingRandom = 10;
 var ySpread = 300;
-var size = 500;
+var size = 320;
 var sizeRandom = 150;
 function createImage(load){
 	var origImage = load.currentTarget;
@@ -149,11 +151,14 @@ function createImage(load){
 	image.img = origImage;
 	image.origWidth = image.img.width;
 	image.origHeight = image.img.height;
+	
 
 	var sizeDivisor =  (image.origWidth * image.origHeight) / Math.pow(size + Math.random() * sizeRandom, 2);
-	
-	image.img.height =  Math.min(image.img.height / sizeDivisor, window.innerHeight - 30);
-	image.img.width = image.origWidth * image.img.height / image.origHeight;image.img.width / sizeDivisor;
+	var sizeText = document.getElementById("sizeText");
+
+
+	image.img.height =  window.innerHeight/100/3*2* sizeText.value  + window.innerHeight/100/4*3*sizeText.value * Math.random(); 
+	image.img.width = image.origWidth * image.img.height / image.origHeight;
 	images.push(image);
 
 			var pictureDiv = document.getElementById("picture" + image.id);
@@ -164,7 +169,7 @@ function createImage(load){
 
 var animationTimer = null;
 function startAnimation(){
-
+	speed = document.getElementById('speedText').value / frameTime;
  	if(!animationTimer){
 		started = true;
 		animationStep();	
@@ -183,7 +188,7 @@ function startAnimation(){
 
 var pos = 0;
 var frameTime = 20;
-var speed = 40.0 / frameTime; //Pixel per second
+var speed = 40.0 / frameTime; //Pixel per second, set in menuHider (onload).
 var speedRandom = 2;
 var t;
 var windowSizeX = 720;
@@ -205,6 +210,8 @@ function menuHider(){
 	}
 	mouseMoved = false;
 	setTimeout(menuHider, menuHideTimeout);
+	
+	
 }
 document.onLoad = menuHider();
 //End - Show/Hide menu
