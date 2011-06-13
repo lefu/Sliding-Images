@@ -1,0 +1,310 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-US" lang="en-US">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<title>Image Slideshow</title>
+<style type="text/css">
+<!--
+div.pictures {
+
+overflow: visible;
+
+}
+
+div.menu {
+overflow: visible;
+-moz-box-shadow: 4px 4px 20px #888;
+-moz-border-radius: 7px;
+padding: 3px 3px 3px 10px;
+z-index:9999;
+position:absolute;
+background-color:#EEFFEE;
+}
+
+div.picture {
+overflow: visible;
+-moz-box-shadow: 5px 5px 20px #333;
+-moz-border-radius: 6px;
+padding: 6px 6px 6px 6px;
+z-index:0;
+position:absolute;
+background-color:#FFFFFF;
+}
+
+-->
+
+
+</style> 
+
+</head>
+<body style="overflow: hidden">
+<div id="menu" class="menu" >
+	<input type="file" multiple="" id="inputField" onchange="handleFiles({fileList : this.files, index : 0})" onclick="this.value=''" value="/home/lean/Image1.jpg"/>
+	<button onclick="startAnimation()" id="runButton">run</button>
+	</div>
+
+<div id="pictures" class="pictures"></div>
+
+</body>
+
+
+<script src="pictureUtil.js" type="text/javascript"></script>
+<script src="base64.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+function handleFiles(input) {
+	var input = input; //To be able to get input in the 'onload' function.
+	var fileList = input.fileList;
+	var index = input.index;
+	
+
+	if(index >= fileList.length){
+		return;
+	}
+	var username = document.getElementById("username");
+
+	var cipherText;
+	
+	var inputField = document.getElementById("inputField");
+
+	
+	var fileReader = new FileReader(); 
+	//fileReader.readAsText(fileList[index]);
+	
+	
+
+	fileReader.onload = function(){
+		var id = idCounter++;
+		addPictureFrame(id);
+		var data = fileReader.result;
+		//This function call looks complicated, but to to how asynchronos loading of images and uploading of data works, we have to provide a callback for each method.
+		//We call showpicture with a callback to uploadpicture.
+		//This have a callback to handleFile, which then handles the next file.
+
+
+		input.index+=1;
+//		var showPictureInput = {id:id,
+//					data:binaryToDataUrl(data), 
+//					callback:uploadPicture, 
+//					callbackData:{id:id, data:data, callback : handleFiles, callbackData:input}};
+//		showPicture(showPictureInput);
+
+		//data = thumbnailFromImage(id);
+		//post();
+		var picture = document.getElementById("image" + id);
+		picture.onload = createImage;
+		picture.src = binaryToDataUrl(data);
+		handleFiles(input);
+
+	}
+	//fileReader.readAsDataURL(fileList[index]);
+	fileReader.readAsBinaryString(fileList[index]);
+}
+
+var pictureHTML = null;
+var idCounter = 0;
+function addPictureFrame(id){
+	var pictureDiv = document.getElementById("picture" + id);
+	if(pictureDiv == null){
+		var pictures = document.getElementById("pictures");
+         	var newdiv = document.createElement('div');
+		newdiv.setAttribute('id',id);
+		if(pictureHTML == null){
+			var xmlhttp = new XMLHttpRequest();
+			xmlhttp.open("GET", "picture.html", false);
+			xmlhttp.send(null);
+			pictureHTML = xmlhttp.responseText;
+			
+		}
+		var html = pictureHTML.replace(/%id%/g, id);
+		newdiv.innerHTML += html;
+		newdiv.style.overflow = 'visible';
+		newdiv.style.position = 'absolute';
+		newdiv.style.left = '300px';
+		newdiv.style.top = '0px';
+		newdiv.style.backgroundColor = "#FFFFFF";
+		newdiv.id = "picture" + id;
+		newdiv.className = 'picture';
+		newdiv.style.borderRadius = '0px';
+		pictures.appendChild(newdiv);
+		
+	}
+}
+
+
+
+
+
+var lastPos = 0;
+var spacing = 10;
+var spacingRandom = 10;
+var ySpread = 300;
+var size = 500;
+var sizeRandom = 150;
+function createImage(load){
+	var origImage = load.currentTarget;
+	var id = origImage.id.substring(5);
+	var image = new Object();
+	image.id = id;
+	image.img = origImage;
+	image.origWidth = image.img.width;
+	image.origHeight = image.img.height;
+
+	var sizeDivisor =  (image.origWidth * image.origHeight) / Math.pow(size + Math.random() * sizeRandom, 2);
+	
+	image.img.height =  Math.min(image.img.height / sizeDivisor, window.innerHeight - 30);
+	image.img.width = image.origWidth * image.img.height / image.origHeight;image.img.width / sizeDivisor;
+	images.push(image);
+
+			var pictureDiv = document.getElementById("picture" + image.id);
+			pictureDiv.style.display ='none';
+		
+	//return image;
+};
+
+var animationTimer = null;
+function startAnimation(){
+
+ 	if(!animationTimer){
+		started = true;
+		animationStep();	
+		var btn = document.getElementById('runButton');
+		btn.value = 'stop';
+		var menu = document.getElementById('menu');
+		menu.style.display = 'none';
+	}else{
+		var btn  = document.getElementById('runButton');
+		btn.value = 'run';
+		clearTimeout(animationTimer);
+		animationTimer = null;
+	}
+}
+
+
+var pos = 0;
+var frameTime = 20;
+var speed = 40.0 / frameTime; //Pixel per second
+var speedRandom = 2;
+var t;
+var windowSizeX = 720;
+var windowSizeY = 576;
+
+//Show/hide menu
+var mouseMoved = true;
+document.onmousemove=function(evt){
+	var menu = document.getElementById('menu');
+	menu.style.display = null;
+	mouseMoved = true;
+}
+var menuHideTimeout = 1000;
+
+function menuHider(){
+	if(!mouseMoved && animationTimer){
+		var menu = document.getElementById('menu');
+		menu.style.display = 'none';
+	}
+	mouseMoved = false;
+	setTimeout(menuHider, menuHideTimeout);
+}
+document.onLoad = menuHider();
+//End - Show/Hide menu
+
+var images = new Array();
+
+var imagesOnScreen = new Array();
+var lastFrameTime = 0;
+function animationStep(){
+	
+	var i;
+	addImageToScreen();
+	for(i in imagesOnScreen){
+		var image = imagesOnScreen[i];
+		if(image == null){
+			if(i == 0){
+				imagesOnScreen.shift();
+			}
+			continue;
+		}
+		image.x += image.speed;
+			
+		if(image.x > window.innerWidth + 100){
+			var pictureDiv = document.getElementById("picture" + image.id);
+			pictureDiv.style.display ='none';
+			imagesOnScreen[i] = null;
+			if(i == 0){
+				imagesOnScreen.shift();
+			}
+			images.push(image);
+			
+		}else{
+			image.hidden = false;
+			var pictureDiv = document.getElementById("picture" + image.id);
+			pictureDiv.style.display = null;
+			pictureDiv.style.left = image.x + 'px';
+			pictureDiv.style.top = image.y + 'px';
+		}
+		
+	}
+
+	var currentTime = new Date().getTime();
+
+	var delay = Math.max(0, frameTime - (currentTime - lastFrameTime));
+	lastFrameTime = currentTime;
+	animationTimer = setTimeout("animationStep()", delay);
+}
+
+
+var yOverlap = 15;
+var xDistance = 20;
+function addImageToScreen(){
+	var image = images[0];
+	if(image == null){
+		images.shift();
+		return;
+	}
+	image.x = -image.img.width * 1.1;
+	image.y = Math.random() * (window.innerHeight - image.img.height - 20) + 5;
+	image.speed = speed + Math.random() * speedRandom * speed;
+	
+	var i;
+	for(i in imagesOnScreen){
+		
+		var otherImage = imagesOnScreen[i];
+		if(otherImage == null){
+			continue;
+		}		
+		if((otherImage.x + image.img.width * 0.1 > xDistance && image.speed < otherImage.speed) || (otherImage.x + image.img.width * 1.5 > xDistance && image.speed > otherImage.speed * 1.7)){
+			continue;
+		}else {
+			var aTop = image.y;
+			var aBottom = image.y + image.img.height;
+			var bTop = otherImage.y + yOverlap;
+			var bBottom = otherImage.y + otherImage.img.height - yOverlap;
+			if(inside(aTop, bTop, bBottom)){
+				return;
+			}
+			if(inside(aBottom, bTop, bBottom)){
+				return;
+			}
+			if(inside(bTop, aTop, aBottom)){
+				return;
+			}
+			if(inside(bBottom, aTop, aBottom)){
+				return;
+			}
+		}
+	}
+	image.hidden = false;
+	
+	imagesOnScreen.push(images.shift());
+}
+
+function inside(p0, l0, l1){
+	return (p0 > l0 && p0 < l1);
+}
+
+window.resizeTo(windowSizeX,windowSizeY);
+
+
+</script>
+</html>
